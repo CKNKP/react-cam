@@ -8,7 +8,11 @@ export default defineConfig({
     outDir: "dist",
   },
   preview: {
-    port: 3000,
+    port: 3080,
     host: true,
+  },
+  server: {
+    host: "0.0.0.0",
+    port: 3080,
   },
 });

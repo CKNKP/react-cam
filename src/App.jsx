@@ -1,69 +1,59 @@
-import React, { useState, useRef, useEffect } from "react";
-import Webcam from "react-webcam";
+import React, { useState, useRef } from "react";
+import html2canvas from "html2canvas";
 import { Button, Box } from "@mui/material";
-import CameraAltIcon from "@mui/icons-material/CameraAlt";
-import SwitchCameraIcon from "@mui/icons-material/SwitchCamera";
+import { Camera } from "@mui/icons-material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 
 const App = () => {
+  const [iframeKey, setIframeKey] = useState(0);
   const [screenshot, setScreenshot] = useState(null);
-  const [deviceId, setDeviceId] = useState(null);
-  const [facingMode, setFacingMode] = useState("user"); // 'user' for front, 'environment' for back
-  const webcamRef = useRef(null);
+  const iframeRef = useRef(null);
+  const ipCameraUrl = "http://80.32.125.254:8080/cgi-bin/guestimage.html";
 
-  useEffect(() => {
-    // Fetch the list of media devices
-    navigator.mediaDevices.enumerateDevices().then((devices) => {
-      const videoDevices = devices.filter(
-        (device) => device.kind === "videoinput"
-      );
-
-      // Automatically set the first video device if available
-      if (videoDevices.length > 0) {
-        setDeviceId(videoDevices[0].deviceId);
-      }
-    });
-  }, []);
-
-  const captureScreenshot = () => {
-    const screenshot = webcamRef.current.getScreenshot();
-    setScreenshot(screenshot);
-  };
-
-  const handleClick = () => {
-    if (screenshot) {
-      window.open(screenshot);
-    }
-  };
-
-  const handleSwitchCamera = () => {
-    setFacingMode((prevMode) => (prevMode === "user" ? "environment" : "user"));
-  };
-
-  const resetWebcam = () => {
+  const resetCamera = () => {
+    setIframeKey((prevKey) => prevKey + 1);
     setScreenshot(null);
   };
 
+  const captureScreenshot = async () => {
+    const canvas = await html2canvas(iframeRef.current);
+    const screenshot = canvas.toDataURL("image/png");
+    setScreenshot(screenshot);
+  };
+
   return (
-    <div className="d-flex flex-column justify-content-center align-items-center vh-100">
-      <div className="position-relative">
-        {screenshot ? (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100vh",
+      }}
+    >
+      <div
+        style={{
+          position: "relative",
+          width: "100vw",
+          height: "calc(100vh - 64px)", // Adjust height to account for button row
+        }}
+      >
+        <iframe
+          key={iframeKey}
+          src={ipCameraUrl}
+          style={{
+            width: "100%",
+            height: "100%",
+            border: "none",
+          }}
+          title="IP Camera"
+          ref={iframeRef}
+        />
+        {screenshot && (
           <img
             src={screenshot}
             alt="Screenshot"
-            style={{ width: "100%", height: "100%", cursor: "pointer" }}
-            onClick={handleClick}
-          />
-        ) : (
-          <Webcam
-            audio={false}
-            height={480}
-            ref={webcamRef}
-            screenshotFormat="image/jpeg"
-            width={480}
-            videoConstraints={{
-              facingMode: facingMode,
-            }}
+            style={{ maxWidth: "100%", maxHeight: "100%" }}
           />
         )}
       </div>
@@ -78,12 +68,12 @@ const App = () => {
             justifyContent: "center",
           }}
         >
-          <CameraAltIcon />
+          <Camera />
         </Button>
         <Button
           variant="contained"
-          color="secondary"
-          onClick={handleSwitchCamera}
+          color="primary"
+          onClick={resetCamera}
           sx={{
             ml: 1,
             display: "flex",
@@ -91,24 +81,9 @@ const App = () => {
             justifyContent: "center",
           }}
         >
-          <SwitchCameraIcon />
-        </Button>
-      </Box>
-      {screenshot && (
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={resetWebcam}
-          sx={{
-            mt: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
           <RefreshIcon />
         </Button>
-      )}
+      </Box>
     </div>
   );
 };
